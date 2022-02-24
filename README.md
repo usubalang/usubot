@@ -1,0 +1,2 @@
+# usubot
+Bot for usuba
