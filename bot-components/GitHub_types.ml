@@ -147,6 +147,15 @@ type push_info = {
   commits_msg : string list;
 }
 
+type status_state = STATE_FAILURE | STATE_SUCCESS | STATE_PENDING
+
+let pp_status_state ppf s =
+  f ppf "%s"
+    (match s with
+    | STATE_FAILURE -> "failure"
+    | STATE_SUCCESS -> "success"
+    | STATE_PENDING -> "pending")
+
 type check_run_status = COMPLETED | IN_PROGRESS | QUEUED
 
 type check_conclusion =

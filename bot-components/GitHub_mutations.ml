@@ -114,6 +114,19 @@ let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
     | QUEUED -> `QUEUED
   in
   let open GitHub_GraphQL.NewCheckRun in
+  let query =
+    "mutation newCheckRun($name: String!, $repoId: ID!, $headSha: \
+     GitObjectID!, $status: RequestableCheckStatusState!, $title: String!, \
+     $text: String, $summary: String!, $url: URI!, $conclusion: \
+     CheckConclusionState, $externalId: String) {\n\
+     createCheckRun(input: {status: $status, name: $name, repositoryId: \
+     $repoId, headSha: $headSha, conclusion: $conclusion, detailsUrl: $url, \
+     output: {title: $title, text: $text, summary: $summary}, externalId: \
+     $externalId}) {\n\
+     clientMutationId \n\
+     }\n\n\
+     }\n"
+  in
   makeVariables ~name ~repoId:repo_id ~headSha:head_sha ~status ~title ?text
     ~summary ~url:details_url ?conclusion ?externalId:external_id ()
   |> serializeVariables |> variablesToJson
@@ -176,21 +189,24 @@ let update_milestone ~bot_info new_milestone (issue : issue) =
 
 let remove_milestone = update_milestone "null"
 
-let send_status_check ~bot_info ~repo_full_name ~commit ~state ~url ~context
-    ~description =
+let send_status_check ~bot_info ~repo_full_name ~commit
+    ~(state : GitHub_types.status_state) ~url ~context ~description =
   Lwt_io.printf "Sending status check to %s (commit %s, state %s)\n"
-    repo_full_name commit state
+    repo_full_name commit
+    (Caml.Format.asprintf "%a" GitHub_types.pp_status_state state)
   >>= fun () ->
-  let body =
-    "{\"state\": \"" ^ state ^ "\",\"target_url\":\"" ^ url
-    ^ "\", \"description\": \"" ^ description ^ "\", \"context\": \"" ^ context
-    ^ "\"}"
-    |> Cohttp_lwt.Body.of_string
+  let bodys =
+    "{\"state\": \""
+    ^ Caml.Format.asprintf "%a" GitHub_types.pp_status_state state
+    ^ "\",\"target_url\":\"" ^ url ^ "\", \"description\": \"" ^ description
+    ^ "\", \"context\": \"" ^ context ^ "\"}"
   in
+  let body = bodys |> Cohttp_lwt.Body.of_string in
   let uri =
     "https://api.github.com/repos/" ^ repo_full_name ^ "/statuses/" ^ commit
     |> Uri.of_string
   in
+  Caml.Format.eprintf "%s@.%a@." bodys Uri.pp uri;
   send_request ~body ~uri (github_header bot_info) ~bot_info
 
 let add_pr_to_column ~bot_info ~pr_id ~column_id =

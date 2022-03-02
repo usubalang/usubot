@@ -43,24 +43,25 @@ let handle_pull_request_updated action info bot_infos =
               time_head time_base,
             "Branch is faster than main" )
       in
-      let state = if b then "failure" else "sucess" in
+      (* let state = if b then STATE_FAILURE else STATE_PENDING in *)
       let conclusion = if b then FAILURE else SUCCESS in
       (* GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos *)
       (*   ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner *)
       (*   ~repo:info.issue.issue.repo *)
-      (*   (GitHub_mutations.post_and_report_comment ~id:info.issue.id ~message) *)
+      (*   (GitHub_mutations.post_and_report_comment ~id:info.issue.id *)
+      (*      ~message:text) *)
       (* |> Lwt.async; *)
       let github_repo_full_name =
         info.issue.issue.owner ^ "/" ^ info.issue.issue.repo
       in
-      GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos
-        ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner
-        ~repo:info.issue.issue.repo
-        (GitHub_mutations.send_status_check
-           ~repo_full_name:github_repo_full_name ~commit:info.head.sha ~state
-           ~url:info.head.branch.repo_url ~context:"Testing"
-           ~description:"Random description")
-      |> Lwt.async;
+      (* GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos *)
+      (*   ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner *)
+      (*   ~repo:info.issue.issue.repo *)
+      (*   (GitHub_mutations.send_status_check *)
+      (*      ~repo_full_name:github_repo_full_name ~commit:info.head.sha ~state *)
+      (*      ~url:info.head.branch.repo_url ~context:"Testing" *)
+      (*      ~description:"Random description") *)
+      (* |> Lwt.async; *)
       (fun () ->
         GitHub_queries.get_repository_id ~bot_info:bot_infos.bot_infos
           ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo

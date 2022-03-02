@@ -116,6 +116,10 @@ type push_info = {
   commits_msg : string list;
 }
 
+type status_state = STATE_FAILURE | STATE_SUCCESS | STATE_PENDING
+
+val pp_status_state : Format.formatter -> status_state -> unit
+
 type check_run_status = COMPLETED | IN_PROGRESS | QUEUED
 
 type check_conclusion =

@@ -68,7 +68,7 @@ val send_status_check :
   bot_info:Bot_info.t ->
   repo_full_name:string ->
   commit:string ->
-  state:string ->
+  state:status_state ->
   url:string ->
   context:string ->
   description:string ->
