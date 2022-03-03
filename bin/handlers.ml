@@ -4,19 +4,19 @@ open Cohttp_lwt_unix
 open Parser_bot_info
 open Lwt
 
-let time branch =
-  let command =
-    Helpers.f
-      "cd ~/ocamlbot-testing && git fetch && git checkout %s && dune exec \
-       program 1> /dev/null 2> output &&cd -"
-      branch
-  in
-  let _ex = Sys.command command in
-  let ci = open_in "/home/mattias/ocamlbot-testing/output" in
-  let r = Str.regexp "Ran in \\([0-9.]+\\)" in
-  let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in
-  close_in ci;
-  time
+let time _branch = Random.float 10.
+(* let command = *)
+(*   Helpers.f *)
+(* "cd ~/ocamlbot-testing && git fetch && git checkout %s && dune exec \ *)
+   (*      program 1> /dev/null 2> output &&cd -" *)
+(*     branch *)
+(* in *)
+(* let _ex = Sys.command command in *)
+(* let ci = open_in "/home/mattias/ocamlbot-testing/output" in *)
+(* let r = Str.regexp "Ran in \\([0-9.]+\\)" in *)
+(* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
+(* close_in ci; *)
+(* time *)
 
 let handle_pull_request_updated action info bot_infos =
   match action with
