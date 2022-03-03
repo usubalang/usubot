@@ -7,8 +7,8 @@ open Lwt
 let time branch =
   let command =
     Helpers.f
-      "cd ~/ocamlbot-testing && git checkout %s && dune exec program 1> \
-       /dev/null 2> output &&cd -"
+      "cd ~/ocamlbot-testing && git fetch && git checkout %s && dune exec \
+       program 1> /dev/null 2> output &&cd -"
       branch
   in
   let _ex = Sys.command command in
