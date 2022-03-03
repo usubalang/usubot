@@ -80,7 +80,9 @@ let get_bot_infos () =
   match Cmdliner.Cmd.(eval_value parse_infos) with
   | Ok infos -> (
       match infos with
-      | `Ok infos -> infos
+      | `Ok infos ->
+          Format.printf "@[<v 1>%a@." Bot_info.pp infos.bot_infos;
+          infos
       | `Help | `Version -> exit Cmd.Exit.ok)
   | Error e ->
       exit
