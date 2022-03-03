@@ -130,8 +130,11 @@ let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
   makeVariables ~name ~repoId:repo_id ~headSha:head_sha ~status ~title ?text
     ~summary ~url:details_url ?conclusion ?externalId:external_id ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
-       ~parse:(Fn.compose parse unsafe_fromJson)
+  |> fun json ->
+  Caml.Format.eprintf "%a@." Yojson.Basic.pp json;
+  GraphQL_query.send_graphql_query ~bot_info ~query
+    ~parse:(Fn.compose parse unsafe_fromJson)
+    json
   >|= function
   | Ok _ -> ()
   | Error err ->
