@@ -12,6 +12,14 @@ type infos = {
   daily_schedule_secret : string;
 }
 
+let pp ppf t =
+  Format.fprintf ppf
+    "{ bot_infos : %a;@ port : %d;@ github_webhook_secret : %s;@ \
+     github_access_token : %s;@ daily_schedule_secret : %s;@,\
+     }"
+    Bot_info.pp t.bot_infos t.port t.github_webhook_secret t.github_access_token
+    t.daily_schedule_secret
+
 let toml_file =
   let doc = "TOML file containing all the necessary bot infos" in
   let inf = Arg.(info [] ~docv:"FILE" ~doc) in
@@ -81,7 +89,7 @@ let get_bot_infos () =
   | Ok infos -> (
       match infos with
       | `Ok infos ->
-          Format.printf "@[<v 1>%a@." Bot_info.pp infos.bot_infos;
+          Format.printf "@[<v 1>%a@." pp infos;
           infos
       | `Help | `Version -> exit Cmd.Exit.ok)
   | Error e ->
