@@ -26,7 +26,8 @@ let make_jwt ~key ~app_id =
   let date = Unix.(time () |> gmtime) in
   Unix.(
     Caml.Format.eprintf "Unix time is %d/%d/%d at %d:%d:%d@." date.tm_mday
-      date.tm_mon date.tm_year date.tm_hour date.tm_min date.tm_sec);
+      (date.tm_mon + 1) (date.tm_year + 1900) date.tm_hour date.tm_min
+      date.tm_sec);
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
       (issuedAt + (60 * 10))
