@@ -23,11 +23,6 @@ let base64 = Base64.encode ~pad:false ~alphabet:Base64.uri_safe_alphabet
 let make_jwt ~key ~app_id =
   let header = "{ \"alg\": \"RS256\" }" in
   let issuedAt = Unix.time () |> Int.of_float in
-  let date = Unix.(time () |> gmtime) in
-  Unix.(
-    Caml.Format.eprintf "Unix time is %d/%d/%d at %d:%d:%d@." date.tm_mday
-      (date.tm_mon + 1) (date.tm_year + 1900) date.tm_hour date.tm_min
-      date.tm_sec);
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
       (issuedAt + (55 * 10))
@@ -93,11 +88,9 @@ let get_installation_token ~bot_info ~key ~owner ~repo =
 let get_installations ~bot_info ~key =
   match make_jwt ~key ~app_id:bot_info.Bot_info.app_id with
   | Ok jwt -> (
-      Caml.Format.eprintf "Get installations ok@.";
       get ~bot_info ~token:jwt ~url:"https://api.github.com/app/installations"
       >|= fun body ->
       try
-        Caml.Format.eprintf "Body: %s@." body;
         let json = Yojson.Basic.from_string body in
         let open Yojson.Basic.Util in
         Ok
@@ -108,6 +101,4 @@ let get_installations ~bot_info ~key =
       | Yojson.Json_error err -> Error (f "Json error: %s" err)
       | Yojson.Basic.Util.Type_error (err, _) ->
           Error (f "Json type error: %s" err))
-  | Error e ->
-      Caml.Format.eprintf "Get installations error@.";
-      Lwt.return (Error e)
+  | Error e -> Lwt.return (Error e)

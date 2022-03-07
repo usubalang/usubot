@@ -68,7 +68,6 @@ let handle_pull_request_updated action info bot_infos =
         >>= function
         | Error e -> Lwt_io.printf "No repo id: %s\n" e
         | Ok repo_id ->
-            Format.eprintf "Repo Id: %s@." repo_id;
             GitHub_installations.action_as_github_app
               ~bot_info:bot_infos.bot_infos ~key:bot_infos.github_private_key
               ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo
