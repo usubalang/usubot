@@ -92,6 +92,7 @@ let get_installations ~bot_info ~key =
       get ~bot_info ~token:jwt ~url:"https://api.github.com/app/installations"
       >|= fun body ->
       try
+        Caml.Format.eprintf "Body: %s@." body;
         let json = Yojson.Basic.from_string body in
         let open Yojson.Basic.Util in
         Ok
