@@ -52,6 +52,6 @@ let action_as_github_app ~bot_info ~key ~owner ~repo action
             action_with_new_installation_token ~bot_info ~key ~owner ~repo
               action ()
           else action ~bot_info
-      | Error _ ->
-          Format.eprintf "GitHub app get installations: error@.";
+      | Error e ->
+          Format.eprintf "GitHub app get installations: error@.  %s@." e;
           action ~bot_info)
