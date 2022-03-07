@@ -23,7 +23,10 @@ let base64 = Base64.encode ~pad:false ~alphabet:Base64.uri_safe_alphabet
 let make_jwt ~key ~app_id =
   let header = "{ \"alg\": \"RS256\" }" in
   let issuedAt = Unix.time () |> Int.of_float in
-  Caml.Format.eprintf "Issued at: %d@." issuedAt;
+  let date = Unix.(time () |> gmtime) in
+  Unix.(
+    Caml.Format.eprintf "Unix time is %d/%d/%d at %d:%d:%d@." date.tm_mday
+      date.tm_mon date.tm_year date.tm_hour date.tm_min date.tm_sec);
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
       (issuedAt + (60 * 10))
