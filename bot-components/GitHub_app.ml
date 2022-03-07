@@ -88,6 +88,7 @@ let get_installation_token ~bot_info ~key ~owner ~repo =
 let get_installations ~bot_info ~key =
   match make_jwt ~key ~app_id:bot_info.Bot_info.app_id with
   | Ok jwt -> (
+      Caml.Format.eprintf "Get installations ok@.";
       get ~bot_info ~token:jwt ~url:"https://api.github.com/app/installations"
       >|= fun body ->
       try
@@ -101,4 +102,6 @@ let get_installations ~bot_info ~key =
       | Yojson.Json_error err -> Error (f "Json error: %s" err)
       | Yojson.Basic.Util.Type_error (err, _) ->
           Error (f "Json type error: %s" err))
-  | Error e -> Lwt.return (Error e)
+  | Error e ->
+      Caml.Format.eprintf "Get installations error@.";
+      Lwt.return (Error e)

@@ -53,5 +53,5 @@ let action_as_github_app ~bot_info ~key ~owner ~repo action
               action ()
           else action ~bot_info
       | Error _ ->
-          Format.eprintf "Error@.";
+          Format.eprintf "GitHub app get installations: error@.";
           action ~bot_info)
