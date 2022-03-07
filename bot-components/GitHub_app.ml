@@ -30,7 +30,7 @@ let make_jwt ~key ~app_id =
       date.tm_sec);
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
-      (issuedAt + (60 * 10))
+      (issuedAt + (55 * 10))
       app_id
   in
   match (base64 header, base64 payload) with
