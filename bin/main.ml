@@ -14,25 +14,15 @@ let server bot_infos =
       with
       | Ok (_, PullRequestUpdated (action, pr_info)) ->
           Handlers.handle_pull_request_updated action pr_info bot_infos
-      | Ok (_, UnsupportedEvent s) ->
-          let body = Helpers.(f "No action taken: %s" s) in
-          (body, Server.respond_string ~status:`OK ~body ())
-      | Ok _ ->
-          let body =
-            "No action taken: event or action is not yet supported.\n\
-             If you'd like this event to be supported, please open an issue on \
-             the bot-components github page"
-          in
-          (body, Server.respond_string ~status:`OK ~body ())
-      | Error ("Webhook signed but with wrong signature." as e) ->
-          Stdio.print_string e;
-          let body = Helpers.f "Error: %s" e in
-          ( body,
-            Server.respond_string ~status:(Code.status_of_code 401) ~body () )
+      | Ok _ -> ("", Server.respond_string ~status:`OK ~body ())
       | Error e ->
+          let status =
+            Code.status_of_code
+              (if e = "Webhook signed but with wrong signature." then 401
+              else 400)
+          in
           let body = Helpers.f "Error: %s" e in
-          ( body,
-            Server.respond_string ~status:(Code.status_of_code 400) ~body () )
+          (body, Server.respond_string ~status ~body ())
     in
     Format.printf "%s@." body;
     response

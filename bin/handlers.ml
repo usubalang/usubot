@@ -4,53 +4,84 @@ open Cohttp_lwt_unix
 open Parser_bot_info
 open Lwt
 
-let time _branch = Random.float 10.
-(* let command = *)
-(*   Helpers.f *)
-(* "cd ~/ocamlbot-testing && git fetch && git checkout %s && dune exec \ *)
-   (*      program 1> /dev/null 2> output &&cd -" *)
-(*     branch *)
-(* in *)
-(* let _ex = Sys.command command in *)
-(* let ci = open_in "/home/mattias/ocamlbot-testing/output" in *)
-(* let r = Str.regexp "Ran in \\([0-9.]+\\)" in *)
-(* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
-(* close_in ci; *)
-(* time *)
+let time bot_infos branch =
+  let interleaving = Helpers.f "%s/bench/interleaving" bot_infos.benchs in
+  (* Go in usuba main repo and checkout the branch *)
+  (* The script will take care of building usubac *)
+  let command =
+    Helpers.f "cd %s && git fetch && git checkout %s && git pull"
+      bot_infos.main_repo branch
+  in
+  Format.printf "%s@." command;
+  let _ex = Sys.command command in
+  (* Go in the benchmarks repo and run the script *)
+  let time_start = Unix.gettimeofday () in
+  let command = Helpers.f "cd %s && ./run.pl 1> output" interleaving in
+  Format.printf "%s@." command;
+  let ex = Sys.command command in
+  let time_end = Unix.gettimeofday () in
+  if ex = 0 then Format.printf "Command ran perfectly@."
+  else Format.printf "command failure@.";
+  let time = time_end -. time_start in
+  (* let ci = open_in "time" in *)
+  (* let r = Str.regexp "[a-z./> ;()]+\\([0-9.]+\\).*" in *)
+  (* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
+  (* close_in ci; *)
+  (* Format.printf "Time: %f" time; *)
+  let ci = open_in (Helpers.f "%s/output" interleaving) in
+  let content = really_input_string ci (in_channel_length ci) in
+  close_in ci;
+  (time, content)
+
+let handle_termination bot_infos (info : issue_info pull_request_info) =
+  Sys.Signal_handle
+    (fun signal ->
+      let message =
+        Format.sprintf
+          "Bot received %d signal and could not end properly. Please restart \
+           the job"
+          signal
+      in
+      GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos
+        ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner
+        ~repo:info.issue.issue.repo
+        (GitHub_mutations.post_and_report_comment ~id:info.issue.id ~message)
+      |> Lwt.async;
+      exit signal)
 
 let handle_pull_request_updated action info bot_infos =
   match action with
   | PullRequestOpened | PullRequestSynchronized | PullRequestReopened ->
+      Sys.(set_signal sigint (handle_termination bot_infos info));
+      Sys.(set_signal sigterm (handle_termination bot_infos info));
       let body =
         Helpers.f "Pull Request Opened/Synchronized: @[<v 0>%a@]"
           GitHub_types.(pp_pull_request_info pp_issue_info)
           info
       in
-      let time_base = time info.base.branch.name in
-      let time_head = time info.head.branch.name in
+      let time_base, content_base = time bot_infos info.base.branch.name in
+      let time_head, content_head = time bot_infos info.head.branch.name in
       let b = time_head > time_base in
+      let outputs =
+        Helpers.f "@[<v 2>%s benchs:@,%s@]@.@[<v 2>%s benchs:@,%s@]@."
+          info.base.branch.name content_base info.head.branch.name content_head
+      in
       let text, summary =
         if b then
           ( Helpers.f
               "Your program ran in %f while the main branch runs in %f, you \
-               should investigate the origin of this slowing"
-              time_head time_base,
+               should investigate the origin of this slowing.@.%s@."
+              time_head time_base outputs,
             "Branch is slower than main" )
         else
           ( Helpers.f
               "Your program ran in %f while the main branch runs in %f, \
-               congrats on being faster!"
-              time_head time_base,
+               congrats on being faster!@.%s@."
+              time_head time_base outputs,
             "Branch is faster than main" )
       in
       (* let state = if b then STATE_FAILURE else STATE_PENDING in *)
       let conclusion = if b then FAILURE else SUCCESS in
-      (* GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos *)
-      (*   ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner *)
-      (*   ~repo:info.issue.issue.repo *)
-      (*   (GitHub_mutations.post_and_report_comment ~id:info.issue.id *)
-      (*      ~message:text) *)
-      (* |> Lwt.async; *)
       let github_repo_full_name =
         info.issue.issue.owner ^ "/" ^ info.issue.issue.repo
       in

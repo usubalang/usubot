@@ -10,6 +10,8 @@ type infos = {
   github_access_token : string;
   gitlab_webhook_secret : string;
   daily_schedule_secret : string;
+  benchs : string;
+  main_repo : string;
 }
 
 let pp ppf t =
@@ -30,7 +32,17 @@ let path =
   let inf = Arg.(info [ "key_path"; "k" ] ~docv:"FILE" ~doc) in
   Arg.(value & opt (some string) None & inf)
 
-let main toml_file path =
+let benchs =
+  let doc = "Directory containing all the benchs" in
+  let inf = Arg.(info [ "benchs"; "b" ] ~docv:"FILE" ~doc) in
+  Arg.(value & opt string "~/benchmarks" & inf)
+
+let main_repo =
+  let doc = "Directory containing the usuba repo" in
+  let inf = Arg.(info [ "usuba"; "u" ] ~docv:"FILE" ~doc) in
+  Arg.(value & opt string "~/usuba" & inf)
+
+let main toml_file path benchs main_repo =
   let toml_data = Config.toml_of_file toml_file in
   let port = Config.port toml_data in
   let gitlab_access_token = Config.gitlab_access_token toml_data in
@@ -66,10 +78,12 @@ let main toml_file path =
       github_access_token;
       gitlab_webhook_secret;
       daily_schedule_secret;
+      benchs;
+      main_repo;
     }
 
 let parse_infos =
-  let main = Term.(ret (const main $ toml_file $ path)) in
+  let main = Term.(ret (const main $ toml_file $ path $ benchs $ main_repo)) in
 
   let doc = "Start the bot with the given config file." in
   let man =
