@@ -28,8 +28,12 @@ let time bot_infos branch =
   (* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
   (* close_in ci; *)
   (* Format.printf "Time: %f" time; *)
-  let ci = open_in (Helpers.f "%s/output" interleaving) in
+  let file = Helpers.f "%s/output" interleaving in
+  Format.eprintf "%s@." file;
+  let ci = open_in file in
+  Format.eprintf "Opened %s@." file;
   let content = really_input_string ci (in_channel_length ci) in
+  Format.eprintf "Read %s@." file;
   close_in ci;
   (time, content)
 
