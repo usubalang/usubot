@@ -12,17 +12,17 @@ let time bot_infos branch =
     Helpers.f "cd %s && git fetch && git checkout %s && git pull"
       bot_infos.main_repo branch
   in
-  Format.printf "%s@." command;
-  let _ex = Sys.command command in
+  Format.printf "%s..." command;
+  let ex = Sys.command command in
+  Format.printf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
   let command = Helpers.f "cd %s && ./run.pl 1> output" interleaving in
-  Format.printf "%s@." command;
+  Format.printf "%s... " command;
   let ex = Sys.command command in
   let time_end = Unix.gettimeofday () in
-  if ex = 0 then Format.printf "Command ran perfectly@."
-  else Format.printf "command failure@.";
   let time = time_end -. time_start in
+  Format.printf " ended with %d exit status@." ex;
   (* let ci = open_in "time" in *)
   (* let r = Str.regexp "[a-z./> ;()]+\\([0-9.]+\\).*" in *)
   (* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
