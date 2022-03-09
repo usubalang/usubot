@@ -60,7 +60,9 @@ let handle_pull_request_updated action info bot_infos =
           info
       in
       let time_base, content_base = time bot_infos info.base.branch.name in
+      Format.printf "Time: %f for %s@." time_base info.base.branch.name;
       let time_head, content_head = time bot_infos info.head.branch.name in
+      Format.printf "Time: %f for %s@." time_head info.head.branch.name;
       let b = time_head > time_base in
       let outputs =
         Helpers.f "@[<v 2>%s benchs:@,%s@]@.@[<v 2>%s benchs:@,%s@]@."
