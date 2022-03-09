@@ -14,6 +14,12 @@ type infos = {
   main_repo : string;
 }
 
+let absolute_path file =
+  let ci = Unix.open_process_in (Format.sprintf "cd %s; pwd" file) in
+  let l = input_line ci in
+  close_in ci;
+  l
+
 let pp ppf t =
   Format.fprintf ppf
     "{ bot_infos : %a;@ port : %d;@ github_webhook_secret : %s;@ \
@@ -57,6 +63,9 @@ let main toml_file path benchs main_repo =
     | Some path -> Config.github_private_key ~path ()
   in
   let app_id = Config.github_app_id toml_data in
+
+  let benchs = absolute_path benchs in
+  let main_repo = absolute_path main_repo in
 
   `Ok
     {
