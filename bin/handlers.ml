@@ -5,7 +5,7 @@ open Parser_bot_info
 open Lwt
 
 let time bot_infos branch =
-  let interleaving = Helpers.f "%s/bench/interleaving" bot_infos.benchs in
+  let benchs = bot_infos.benchs in
   (* Go in usuba main repo and checkout the branch *)
   (* The script will take care of building usubac *)
   let command =
@@ -17,23 +17,14 @@ let time bot_infos branch =
   Format.printf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
-  let command = Helpers.f "cd %s && ./run.pl 1> output" interleaving in
+  let command = Helpers.f "cd %s && ./bench_perfs.pl 1> output" benchs in
   Format.printf "%s... " command;
   let ex = Sys.command command in
   let time_end = Unix.gettimeofday () in
   let time = time_end -. time_start in
   Format.printf " ended with %d exit status@." ex;
-  (* let ci = open_in "time" in *)
-  (* let r = Str.regexp "[a-z./> ;()]+\\([0-9.]+\\).*" in *)
-  (* let time = input_line ci |> Str.replace_first r "\\1" |> Float.of_string in *)
-  (* close_in ci; *)
-  (* Format.printf "Time: %f" time; *)
-  let file = Helpers.f "%s/output" interleaving in
-  Format.eprintf "%s@." file;
-  let ci = open_in file in
-  Format.eprintf "Opened %s@." file;
+  let ci = open_in (Helpers.f "%s/output" benchs) in
   let content = really_input_string ci (in_channel_length ci) in
-  Format.eprintf "Read %s@." file;
   close_in ci;
   (time, content)
 
