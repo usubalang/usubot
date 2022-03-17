@@ -5,7 +5,7 @@ open Parser_bot_info
 open Lwt
 
 let time bot_infos branch =
-  let benchs = bot_infos.benchs in
+  (* let benchs = bot_infos.benchs in *)
   (* Go in usuba main repo and checkout the branch *)
   (* The script will take care of building usubac *)
   let command =
@@ -17,16 +17,17 @@ let time bot_infos branch =
   Format.printf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
-  let command = Helpers.f "cd %s && ./bench_perfs.pl 1> output" benchs in
-  Format.printf "%s... " command;
-  let ex = Sys.command command in
+  (* let command = Helpers.f "cd %s && ./bench_perfs.pl 1> output" benchs in *)
+  (* Format.printf "%s... " command; *)
+  (* let ex = Sys.command command in *)
+  Unix.sleep 1800;
   let time_end = Unix.gettimeofday () in
   let time = time_end -. time_start in
   Format.printf " ended with %d exit status@." ex;
-  let ci = open_in (Helpers.f "%s/output" benchs) in
-  let content = really_input_string ci (in_channel_length ci) in
-  close_in ci;
-  (time, content)
+  (* let ci = open_in (Helpers.f "%s/output" benchs) in *)
+  (* let content = really_input_string ci (in_channel_length ci) in *)
+  (* close_in ci; *)
+  (time, "")
 
 let handle_termination bot_infos (info : issue_info pull_request_info) =
   Sys.Signal_handle

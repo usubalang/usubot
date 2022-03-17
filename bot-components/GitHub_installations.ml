@@ -45,7 +45,7 @@ let action_as_github_app ~bot_info ~key ~owner ~repo action
           else action ~bot_info
       | Error e ->
           (fun () ->
-            Lwt_io.printf
-              "@[<v 2>GitHub app get installations raised an error:@,%s@." e)
+            Lwt_io.printf "GitHub app get installations raised an error:\n%s\n"
+              e)
           |> Lwt.async;
           action ~bot_info)
