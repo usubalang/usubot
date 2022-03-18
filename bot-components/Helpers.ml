@@ -56,8 +56,11 @@ let github_repo_of_gitlab_url ~gitlab_mapping gitlab_repo_url =
   let repo_full_name = owner ^ "/" ^ repo in
   github_repo_of_gitlab_project_path ~gitlab_mapping repo_full_name
 
+let pp_with_zero ppf i =
+  Caml.Format.fprintf ppf "%s%d" (if i < 10 then "0" else "") i
+
 let pp_date ppf d =
   let open Unix in
-  Caml.Format.fprintf ppf "%d:%s%d:%d %d/%d/%d@." d.tm_hour
-    (if d.tm_min < 10 then "0" else "")
-    d.tm_min d.tm_sec d.tm_mday d.tm_mon (d.tm_year + 1900)
+  Caml.Format.fprintf ppf "%a:%a:%a %a/%a/%d@." pp_with_zero d.tm_hour
+    pp_with_zero d.tm_min pp_with_zero d.tm_sec pp_with_zero d.tm_mday
+    pp_with_zero d.tm_mon (d.tm_year + 1900)
