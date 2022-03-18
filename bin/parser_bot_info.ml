@@ -33,6 +33,11 @@ let toml_file =
   let inf = Arg.(info [] ~docv:"FILE" ~doc) in
   Arg.(required & pos ~rev:true 0 (some string) None & inf)
 
+let debug =
+  let doc = "Output debug infos" in
+  let inf = Arg.(info [ "debug"; "d" ] ~doc) in
+  Arg.(value & opt bool false & inf)
+
 let path =
   let doc = "File containing the private key for GitHub" in
   let inf = Arg.(info [ "key_path"; "k" ] ~docv:"FILE" ~doc) in
@@ -48,7 +53,7 @@ let main_repo =
   let inf = Arg.(info [ "usuba"; "u" ] ~docv:"FILE" ~doc) in
   Arg.(value & opt string "~/usuba" & inf)
 
-let main toml_file path benchs main_repo =
+let main toml_file path benchs main_repo debug =
   let toml_data = Config.toml_of_file toml_file in
   let port = Config.port toml_data in
   let gitlab_access_token = Config.gitlab_access_token toml_data in
@@ -79,6 +84,7 @@ let main toml_file path benchs main_repo =
             email = Config.bot_email toml_data;
             domain = Config.bot_domain toml_data;
             app_id;
+            debug;
           };
       mappings = Config.make_mappings_table toml_data;
       port;
@@ -92,7 +98,9 @@ let main toml_file path benchs main_repo =
     }
 
 let parse_infos =
-  let main = Term.(ret (const main $ toml_file $ path $ benchs $ main_repo)) in
+  let main =
+    Term.(ret (const main $ toml_file $ path $ benchs $ main_repo $ debug))
+  in
 
   let doc = "Start the bot with the given config file." in
   let man =

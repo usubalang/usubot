@@ -44,8 +44,7 @@ let action_as_github_app ~bot_info ~key ~owner ~repo action
               action ()
           else action ~bot_info
       | Error e ->
-          (fun () ->
-            Lwt_io.printf "GitHub app get installations raised an error:\n%s\n"
-              e)
-          |> Lwt.async;
+          if bot_info.Bot_info.debug then
+            Caml.Format.eprintf
+              "GitHub app get installations raised an error:\n%s\n" e;
           action ~bot_info)

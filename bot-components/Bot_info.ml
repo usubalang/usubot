@@ -6,6 +6,7 @@ type t = {
   email : string;
   domain : string;
   app_id : int;
+  debug : bool;
 }
 
 let github_token bot_info =

@@ -20,7 +20,7 @@ let time bot_infos branch =
   (* let command = Helpers.f "cd %s && ./bench_perfs.pl 1> output" benchs in *)
   (* Format.printf "%s... " command; *)
   (* let ex = Sys.command command in *)
-  Unix.sleep 1800;
+  Unix.sleep 1900;
   let time_end = Unix.gettimeofday () in
   let time = time_end -. time_start in
   Format.printf " ended with %d exit status@." ex;
