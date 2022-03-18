@@ -27,11 +27,11 @@ let make_jwt ~bot_info ~key =
    let open Unix in
    Caml.Format.eprintf "@[<v 1>--- make jwt ---@,issued at: %a@,exp: %a@."
      Helpers.pp_date (gmtime issuedAtf) Helpers.pp_date
-     (gmtime (issuedAtf +. (55. *. 10.))));
+     (gmtime (issuedAtf +. (60. *. 8.))));
   let issuedAt = Int.of_float issuedAtf in
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
-      (issuedAt + (55 * 10))
+      (issuedAt + (60 * 8))
       bot_info.Bot_info.app_id
   in
   match (base64 header, base64 payload) with
