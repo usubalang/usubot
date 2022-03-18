@@ -36,7 +36,7 @@ let toml_file =
 let debug =
   let doc = "Output debug infos" in
   let inf = Arg.(info [ "debug"; "d" ] ~doc) in
-  Arg.(flag & inf)
+  Arg.(value & flag & inf)
 
 let path =
   let doc = "File containing the private key for GitHub" in
