@@ -74,7 +74,7 @@ let get_installation_token ~bot_info ~owner ~repo ~jwt :
             Ok
               (* Installation tokens expire after one hour, let's stop using them after 40 minutes *)
               ( Yojson.Basic.Util.(json |> member "token" |> to_string),
-                Unix.time () +. (40. *. 60.) )
+                Unix.time () +. (40. *. 55.) )
           with
           | Yojson.Json_error err -> Error (f "Json error: %s" err)
           | Yojson.Basic.Util.Type_error (err, _) ->
