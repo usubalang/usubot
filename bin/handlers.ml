@@ -4,26 +4,28 @@ open Cohttp_lwt_unix
 open Parser_bot_info
 open Lwt
 
-let time bot_infos branch =
+let time bot_info branch =
   (* let benchs = bot_infos.benchs in *)
   (* Go in usuba main repo and checkout the branch *)
   (* The script will take care of building usubac *)
   let command =
     Helpers.f "cd %s && git fetch && git checkout %s && git pull"
-      bot_infos.main_repo branch
+      bot_info.main_repo branch
   in
-  Format.printf "%s..." command;
+  if bot_info.bot_info.Bot_info.debug then Format.eprintf "%s..." command;
   let ex = Sys.command command in
-  Format.printf " ended with %d exit status@." ex;
+  if bot_info.bot_info.Bot_info.debug then
+    Format.eprintf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
   (* let command = Helpers.f "cd %s && ./bench_perfs.pl 1> output" benchs in *)
   (* Format.printf "%s... " command; *)
   (* let ex = Sys.command command in *)
-  (* Unix.sleep 1900; *)
+  Unix.sleep 5;
   let time_end = Unix.gettimeofday () in
   let time = time_end -. time_start in
-  Format.printf " ended with %d exit status@." ex;
+  (* if bot_info.bot_info.Bot_info.debug then *)
+  (*   Format.eprintf " ended with %d exit status@." ex; *)
   (* let ci = open_in (Helpers.f "%s/output" benchs) in *)
   (* let content = really_input_string ci (in_channel_length ci) in *)
   (* close_in ci; *)

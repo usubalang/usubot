@@ -117,7 +117,7 @@ let parse_infos =
   let infos = Cmd.info "usubot" ~version:"dev" ~doc ~man in
   Cmd.v infos main
 
-let get_bot_infos () =
+let get_bot_info () =
   match Cmdliner.Cmd.(eval_value parse_infos) with
   | Ok infos -> (
       match infos with
