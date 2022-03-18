@@ -2,7 +2,7 @@ open Bot_components
 open Cmdliner
 
 type infos = {
-  bot_infos : Bot_components.Bot_info.t;
+  bot_info : Bot_components.Bot_info.t;
   mappings : (string, string) Base.Hashtbl.t * (string, string) Base.Hashtbl.t;
   port : int;
   github_private_key : Mirage_crypto_pk.Rsa.priv;
@@ -25,7 +25,7 @@ let pp ppf t =
     "{ bot_infos : %a;@ port : %d;@ github_webhook_secret : %s;@ \
      github_access_token : %s;@ daily_schedule_secret : %s;@,\
      }"
-    Bot_info.pp t.bot_infos t.port t.github_webhook_secret t.github_access_token
+    Bot_info.pp t.bot_info t.port t.github_webhook_secret t.github_access_token
     t.daily_schedule_secret
 
 let toml_file =
@@ -62,30 +62,32 @@ let main toml_file path benchs main_repo debug =
   let gitlab_webhook_secret = Config.gitlab_webhook_secret toml_data in
   let daily_schedule_secret = Config.daily_schedule_secret toml_data in
   let bot_name = Config.bot_name toml_data in
+  let app_id = Config.github_app_id toml_data in
+  let bot_info =
+    Bot_components.Bot_info.
+      {
+        github_pat = github_access_token;
+        github_install_token = None;
+        gitlab_token = gitlab_access_token;
+        name = bot_name;
+        email = Config.bot_email toml_data;
+        domain = Config.bot_domain toml_data;
+        app_id;
+        debug;
+      }
+  in
   let github_private_key =
     match path with
-    | None -> Config.github_private_key ()
-    | Some path -> Config.github_private_key ~path ()
+    | None -> Config.github_private_key ~bot_info ()
+    | Some path -> Config.github_private_key ~path ~bot_info ()
   in
-  let app_id = Config.github_app_id toml_data in
 
   let benchs = absolute_path benchs in
   let main_repo = absolute_path main_repo in
 
   `Ok
     {
-      bot_infos =
-        Bot_components.Bot_info.
-          {
-            github_pat = github_access_token;
-            github_install_token = None;
-            gitlab_token = gitlab_access_token;
-            name = bot_name;
-            email = Config.bot_email toml_data;
-            domain = Config.bot_domain toml_data;
-            app_id;
-            debug;
-          };
+      bot_info;
       mappings = Config.make_mappings_table toml_data;
       port;
       github_private_key;
@@ -120,7 +122,8 @@ let get_bot_infos () =
   | Ok infos -> (
       match infos with
       | `Ok infos ->
-          Format.printf "@[<v 1>%a@." pp infos;
+          if infos.bot_info.Bot_info.debug then
+            Format.eprintf "@[<v 1>%a@." pp infos;
           infos
       | `Help | `Version -> exit Cmd.Exit.ok)
   | Error e ->

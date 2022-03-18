@@ -85,7 +85,7 @@ let github_app_id toml_data =
 
 (* let string_of_file_path path = Stdio.In_channel.(with_file path ~f:input_all) *)
 
-let github_private_key ?path () =
+let github_private_key ?path ~bot_info () =
   (*string_of_file_path "./github.private-key.pem"*)
   let private_k =
     match path with
@@ -96,11 +96,13 @@ let github_private_key ?path () =
         s
     | None -> Base.Sys.getenv_exn "GITHUB_PRIVATE_KEY"
   in
-  Format.printf "Found private key: %s@." private_k;
+  if bot_info.Bot_info.debug then
+    Format.eprintf "Found private key: %s@." private_k;
   match private_k |> Cstruct.of_string |> X509.Private_key.decode_pem with
   | Ok (`RSA priv) ->
-      Format.printf "Private key bit size: %d@."
-        (Mirage_crypto_pk.Rsa.priv_bits priv);
+      if bot_info.Bot_info.debug then
+        Format.printf "Private key bit size: %d@."
+          (Mirage_crypto_pk.Rsa.priv_bits priv);
       priv
   | Ok _ -> failwith "Not an RSA key"
   | Error (`Msg e) -> failwith (f "Error while decoding RSA key: %s" e)

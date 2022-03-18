@@ -38,7 +38,7 @@ let handle_termination bot_infos (info : issue_info pull_request_info) =
            the job"
           signal
       in
-      GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos
+      GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_info
         ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner
         ~repo:info.issue.issue.repo
         (GitHub_mutations.post_and_report_comment ~id:info.issue.id ~message)
@@ -92,13 +92,13 @@ let handle_pull_request_updated action info bot_infos =
       (*      ~description:"Random description") *)
       (* |> Lwt.async; *)
       (fun () ->
-        GitHub_queries.get_repository_id ~bot_info:bot_infos.bot_infos
+        GitHub_queries.get_repository_id ~bot_info:bot_infos.bot_info
           ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo
         >>= function
         | Error e -> Lwt_io.printf "No repo id: %s\n" e
         | Ok repo_id ->
             GitHub_installations.action_as_github_app
-              ~bot_info:bot_infos.bot_infos ~key:bot_infos.github_private_key
+              ~bot_info:bot_infos.bot_info ~key:bot_infos.github_private_key
               ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo
               (GitHub_mutations.create_check_run ~name:github_repo_full_name
                  ~repo_id ~head_sha:info.head.sha ~conclusion ~status:COMPLETED
