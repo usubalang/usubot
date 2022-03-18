@@ -55,10 +55,18 @@ let handle_pull_request_updated action info bot_info =
           GitHub_types.(pp_pull_request_info pp_issue_info)
           info
       in
+      if bot_info.bot_info.Bot_info.debug then
+        Format.eprintf "Starting timing of %s at: %a@." info.base.branch.name
+          Helpers.pp_date
+          Unix.(time () |> gmtime);
       let time_base, content_base = time bot_info info.base.branch.name in
-      Format.printf "Time: %f for %s@." time_base info.base.branch.name;
+      if bot_info.bot_info.Bot_info.debug then
+        Format.eprintf "  Time: %f@.Starting timeing of %s at: %a@." time_base
+          info.head.branch.name Helpers.pp_date
+          Unix.(time () |> gmtime);
       let time_head, content_head = time bot_info info.head.branch.name in
-      Format.printf "Time: %f for %s@." time_head info.head.branch.name;
+      if bot_info.bot_info.Bot_info.debug then
+        Format.eprintf "  Time: %f@." time_head;
       let b = time_head > time_base in
       let outputs =
         Helpers.f "@[<v 2>%s benchs:@,%s@]@.@[<v 2>%s benchs:@,%s@]@."

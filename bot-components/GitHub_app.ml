@@ -26,7 +26,8 @@ let make_jwt ~bot_info ~key =
   (if bot_info.Bot_info.debug then
    let open Unix in
    let d = gmtime issuedAtf in
-   Caml.Format.eprintf "issued at: %a@." Helpers.pp_date d);
+   Caml.Format.eprintf "@[<v 1>--- make jwt ---@,issued at: %a@."
+     Helpers.pp_date d);
   let issuedAt = Int.of_float issuedAtf in
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
