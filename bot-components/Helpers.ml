@@ -58,5 +58,6 @@ let github_repo_of_gitlab_url ~gitlab_mapping gitlab_repo_url =
 
 let pp_date ppf d =
   let open Unix in
-  Caml.Format.fprintf ppf "%d:%d:%d %d/%d/%d@." d.tm_hour d.tm_min d.tm_sec
-    d.tm_mday d.tm_mon d.tm_year
+  Caml.Format.fprintf ppf "%d:%s%d:%d %d/%d/%d@." d.tm_hour
+    (if d.tm_min < 10 then "0" else "")
+    d.tm_min d.tm_sec d.tm_mday d.tm_mon (d.tm_year + 1900)
