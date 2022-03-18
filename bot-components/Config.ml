@@ -101,7 +101,7 @@ let github_private_key ?path ~bot_info () =
   match private_k |> Cstruct.of_string |> X509.Private_key.decode_pem with
   | Ok (`RSA priv) ->
       if bot_info.Bot_info.debug then
-        Format.printf "Private key bit size: %d@."
+        Format.eprintf "Private key bit size: %d@."
           (Mirage_crypto_pk.Rsa.priv_bits priv);
       priv
   | Ok _ -> failwith "Not an RSA key"

@@ -30,7 +30,7 @@ let server bot_info =
   Server.create
     ~mode:(`TCP (`Port bot_info.port))
     (Server.make ~callback () ~conn_closed:(fun _ ->
-         Format.eprintf "Connection closed@."))
+         Format.printf "Callback handled@."))
 
 let () =
   (* RNG seeding: https://github.com/mirage/mirage-crypto#faq *)
