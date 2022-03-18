@@ -55,3 +55,8 @@ let github_repo_of_gitlab_url ~gitlab_mapping gitlab_repo_url =
   in
   let repo_full_name = owner ^ "/" ^ repo in
   github_repo_of_gitlab_project_path ~gitlab_mapping repo_full_name
+
+let pp_date ppf d =
+  let open Unix in
+  Caml.Format.fprintf ppf "%d:%d:%d %d/%d/%d@." d.tm_hour d.tm_min d.tm_sec
+    d.tm_mday d.tm_mon d.tm_year

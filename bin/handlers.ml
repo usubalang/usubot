@@ -45,19 +45,19 @@ let handle_termination bot_infos (info : issue_info pull_request_info) =
       |> Lwt.async;
       exit signal)
 
-let handle_pull_request_updated action info bot_infos =
+let handle_pull_request_updated action info bot_info =
   match action with
   | PullRequestOpened | PullRequestSynchronized | PullRequestReopened ->
-      Sys.(set_signal sigint (handle_termination bot_infos info));
-      Sys.(set_signal sigterm (handle_termination bot_infos info));
+      Sys.(set_signal sigint (handle_termination bot_info info));
+      Sys.(set_signal sigterm (handle_termination bot_info info));
       let body =
         Helpers.f "Pull Request Opened/Synchronized: @[<v 0>%a@]"
           GitHub_types.(pp_pull_request_info pp_issue_info)
           info
       in
-      let time_base, content_base = time bot_infos info.base.branch.name in
+      let time_base, content_base = time bot_info info.base.branch.name in
       Format.printf "Time: %f for %s@." time_base info.base.branch.name;
-      let time_head, content_head = time bot_infos info.head.branch.name in
+      let time_head, content_head = time bot_info info.head.branch.name in
       Format.printf "Time: %f for %s@." time_head info.head.branch.name;
       let b = time_head > time_base in
       let outputs =
@@ -83,8 +83,8 @@ let handle_pull_request_updated action info bot_infos =
       let github_repo_full_name =
         info.issue.issue.owner ^ "/" ^ info.issue.issue.repo
       in
-      (* GitHub_installations.action_as_github_app ~bot_info:bot_infos.bot_infos *)
-      (*   ~key:bot_infos.github_private_key ~owner:info.issue.issue.owner *)
+      (* GitHub_installations.action_as_github_app ~bot_info:bot_info.bot_info *)
+      (*   ~key:bot_info.github_private_key ~owner:info.issue.issue.owner *)
       (*   ~repo:info.issue.issue.repo *)
       (*   (GitHub_mutations.send_status_check *)
       (*      ~repo_full_name:github_repo_full_name ~commit:info.head.sha ~state *)
@@ -92,13 +92,16 @@ let handle_pull_request_updated action info bot_infos =
       (*      ~description:"Random description") *)
       (* |> Lwt.async; *)
       (fun () ->
-        GitHub_queries.get_repository_id ~bot_info:bot_infos.bot_info
+        GitHub_queries.get_repository_id ~bot_info:bot_info.bot_info
           ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo
         >>= function
         | Error e -> Lwt_io.printf "No repo id: %s\n" e
         | Ok repo_id ->
+            if bot_info.bot_info.Bot_info.debug then
+              Format.eprintf "Starting github actions at: %a@." Helpers.pp_date
+                Unix.(time () |> gmtime);
             GitHub_installations.action_as_github_app
-              ~bot_info:bot_infos.bot_info ~key:bot_infos.github_private_key
+              ~bot_info:bot_info.bot_info ~key:bot_info.github_private_key
               ~owner:info.issue.issue.owner ~repo:info.issue.issue.repo
               (GitHub_mutations.create_check_run ~name:github_repo_full_name
                  ~repo_id ~head_sha:info.head.sha ~conclusion ~status:COMPLETED
