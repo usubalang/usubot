@@ -132,8 +132,8 @@ let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
   |> serializeVariables |> variablesToJson
   |> fun json ->
   if bot_info.Bot_info.debug then
-    Caml.Format.eprintf "@[<v 2>Make Variables produced:@,%a@." Yojson.Basic.pp
-      json;
+    Caml.Format.eprintf "@[<v 1>---Make variables---@,@[<v 1>produced:@,%a@."
+      Yojson.Basic.pp json;
   GraphQL_query.send_graphql_query ~bot_info ~query
     ~parse:(Fn.compose parse unsafe_fromJson)
     json
