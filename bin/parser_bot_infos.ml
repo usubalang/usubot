@@ -2,7 +2,7 @@ open Bot_components
 open Cmdliner
 
 type infos = {
-  bot_info : Bot_components.Bot_info.t;
+  bot_infos : Bot_components.Bot_infos.t;
   mappings : (string, string) Base.Hashtbl.t * (string, string) Base.Hashtbl.t;
   port : int;
   github_private_key : Mirage_crypto_pk.Rsa.priv;
@@ -22,11 +22,11 @@ let absolute_path file =
 
 let pp ppf t =
   Format.fprintf ppf
-    "{ bot_infos : %a;@ port : %d;@ github_webhook_secret : %s;@ \
+    "{ bot_infoss : %a;@ port : %d;@ github_webhook_secret : %s;@ \
      github_access_token : %s;@ daily_schedule_secret : %s;@,\
      }"
-    Bot_info.pp t.bot_info t.port t.github_webhook_secret t.github_access_token
-    t.daily_schedule_secret
+    Bot_infos.pp t.bot_infos t.port t.github_webhook_secret
+    t.github_access_token t.daily_schedule_secret
 
 let toml_file =
   let doc = "TOML file containing all the necessary bot infos" in
@@ -63,8 +63,8 @@ let main toml_file path benchs main_repo debug =
   let daily_schedule_secret = Config.daily_schedule_secret toml_data in
   let bot_name = Config.bot_name toml_data in
   let app_id = Config.github_app_id toml_data in
-  let bot_info =
-    Bot_components.Bot_info.
+  let bot_infos =
+    Bot_components.Bot_infos.
       {
         github_pat = github_access_token;
         github_install_token = None;
@@ -78,8 +78,8 @@ let main toml_file path benchs main_repo debug =
   in
   let github_private_key =
     match path with
-    | None -> Config.github_private_key ~bot_info ()
-    | Some path -> Config.github_private_key ~path ~bot_info ()
+    | None -> Config.github_private_key ~bot_infos ()
+    | Some path -> Config.github_private_key ~path ~bot_infos ()
   in
 
   let benchs = absolute_path benchs in
@@ -87,7 +87,7 @@ let main toml_file path benchs main_repo debug =
 
   `Ok
     {
-      bot_info;
+      bot_infos;
       mappings = Config.make_mappings_table toml_data;
       port;
       github_private_key;
@@ -117,12 +117,12 @@ let parse_infos =
   let infos = Cmd.info "usubot" ~version:"dev" ~doc ~man in
   Cmd.v infos main
 
-let get_bot_info () =
+let get_bot_infos () =
   match Cmdliner.Cmd.(eval_value parse_infos) with
   | Ok infos -> (
       match infos with
       | `Ok infos ->
-          if infos.bot_info.Bot_info.debug then
+          if infos.bot_infos.Bot_infos.debug then
             Format.eprintf "@[<v 1>%a@." pp infos;
           infos
       | `Help | `Version -> exit Cmd.Exit.ok)

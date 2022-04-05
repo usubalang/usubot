@@ -1,4 +1,4 @@
-open Bot_info
+open Bot_infos
 open Cohttp
 open Cohttp_lwt_unix
 open Lwt
@@ -21,9 +21,9 @@ let string_match ~regexp string =
     true
   with Stdlib.Not_found -> false
 
-let headers ~bot_info header_list =
+let headers ~bot_infos header_list =
   (Header.init () |> fun headers -> Header.add_list headers header_list)
-  |> fun headers -> Header.add headers "User-Agent" bot_info.name
+  |> fun headers -> Header.add headers "User-Agent" bot_infos.name
 
 let print_response (resp, body) =
   let code = resp |> Response.status |> Code.code_of_status in
@@ -35,8 +35,8 @@ let print_response (resp, body) =
     body |> Cohttp_lwt.Body.to_string >>= Lwt_io.printf "Body:\n%s\n"
   else Lwt.return_unit
 
-let send_request ~bot_info ~body ~uri header_list =
-  let headers = headers header_list ~bot_info in
+let send_request ~bot_infos ~body ~uri header_list =
+  let headers = headers header_list ~bot_infos in
   Client.post ~body ~headers uri >>= print_response
 
 let handle_json action body =
@@ -57,12 +57,12 @@ let project_api_preview_header =
 let app_api_preview_header =
   [ ("Accept", "application/vnd.github.machine-man-preview+json") ]
 
-let github_header bot_info =
-  [ ("Authorization", "bearer " ^ github_token bot_info) ]
+let github_header bot_infos =
+  [ ("Authorization", "bearer " ^ github_token bot_infos) ]
 
-let generic_get ~bot_info relative_uri ?(header_list = []) json_handler =
+let generic_get ~bot_infos relative_uri ?(header_list = []) json_handler =
   let uri = "https://api.github.com/" ^ relative_uri |> Uri.of_string in
-  let headers = headers (header_list @ github_header bot_info) ~bot_info in
+  let headers = headers (header_list @ github_header bot_infos) ~bot_infos in
   Client.get ~headers uri
   >>= (fun (_response, body) -> Cohttp_lwt.Body.to_string body)
   >|= handle_json json_handler

@@ -20,10 +20,10 @@ let rs256_sign ~key ~data =
 let base64 = Base64.encode ~pad:false ~alphabet:Base64.uri_safe_alphabet
 
 (* The following functions are largely based on https://github.com/Schniz/reason-pr-labels *)
-let make_jwt ~bot_info ~key =
+let make_jwt ~bot_infos ~key =
   let header = "{ \"alg\": \"RS256\" }" in
   let issuedAtf = Unix.time () in
-  (if bot_info.Bot_info.debug then
+  (if bot_infos.Bot_infos.debug then
    let open Unix in
    Caml.Format.eprintf "@[<v 1>--- make jwt ---@,issued at: %a@,exp: %a@."
      Helpers.pp_date (gmtime issuedAtf) Helpers.pp_date
@@ -32,7 +32,7 @@ let make_jwt ~bot_info ~key =
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
       (issuedAt + (60 * 8))
-      bot_info.Bot_info.app_id
+      bot_infos.Bot_infos.app_id
   in
   match (base64 header, base64 payload) with
   | Ok h, Ok p -> (
@@ -43,15 +43,15 @@ let make_jwt ~bot_info ~key =
   | Error (`Msg e), _ | _, Error (`Msg e) ->
       Error (f "Couldn't create JWT token: %s" e)
 
-let get ~bot_info ~token ~url =
+let get ~bot_infos ~token ~url =
   Stdio.print_endline ("Making get request to " ^ url);
-  let headers = headers ~bot_info (github_headers token) in
+  let headers = headers ~bot_infos (github_headers token) in
   Client.get ~headers (Uri.of_string url) >>= fun (_response, body) ->
   Cohttp_lwt.Body.to_string body
 
-let post ~bot_info ~body ~token ~url =
+let post ~bot_infos ~body ~token ~url =
   Stdio.print_endline ("Making post request to " ^ url);
-  let headers = headers ~bot_info (github_headers token) in
+  let headers = headers ~bot_infos (github_headers token) in
   let body =
     (match body with None -> "{}" | Some json -> Yojson.to_string json)
     |> Cohttp_lwt.Body.of_string
@@ -59,9 +59,9 @@ let post ~bot_info ~body ~token ~url =
   Cohttp_lwt_unix.Client.post ~body ~headers (Uri.of_string url)
   >>= fun (_response, body) -> Cohttp_lwt.Body.to_string body
 
-let get_installation_token ~bot_info ~owner ~repo ~jwt :
+let get_installation_token ~bot_infos ~owner ~repo ~jwt :
     (string * float, string) Result.t Lwt.t =
-  get ~bot_info ~token:jwt
+  get ~bot_infos ~token:jwt
     ~url:(f "https://api.github.com/repos/%s/%s/installation" owner repo)
   >>= (fun body ->
         try
@@ -69,7 +69,7 @@ let get_installation_token ~bot_info ~owner ~repo ~jwt :
           let access_token_url =
             Yojson.Basic.Util.(json |> member "access_tokens_url" |> to_string)
           in
-          post ~bot_info ~body:None ~token:jwt ~url:access_token_url
+          post ~bot_infos ~body:None ~token:jwt ~url:access_token_url
           >|= Result.return
         with
         | Yojson.Json_error err -> Lwt.return_error (f "Json error: %s" err)
@@ -87,23 +87,23 @@ let get_installation_token ~bot_info ~owner ~repo ~jwt :
           | Yojson.Basic.Util.Type_error (err, _) ->
               Error (f "Json type error: %s" err))
 
-let get_installation_token ~bot_info ~key ~owner ~repo =
-  match make_jwt ~bot_info ~key with
-  | Ok jwt -> get_installation_token ~bot_info ~jwt ~owner ~repo
+let get_installation_token ~bot_infos ~key ~owner ~repo =
+  match make_jwt ~bot_infos ~key with
+  | Ok jwt -> get_installation_token ~bot_infos ~jwt ~owner ~repo
   | Error e -> Lwt.return (Error e)
 
-let get_installations ~bot_info ~key =
-  match make_jwt ~key ~bot_info with
+let get_installations ~bot_infos ~key =
+  match make_jwt ~key ~bot_infos with
   | Ok jwt -> (
-      if bot_info.Bot_info.debug then
+      if bot_infos.Bot_infos.debug then
         Caml.Format.eprintf
           "@[<v 1>---Get Installations---@,@[<v 2>Get Installations JWT: %s@."
           jwt;
-      get ~bot_info ~token:jwt ~url:"https://api.github.com/app/installations"
+      get ~bot_infos ~token:jwt ~url:"https://api.github.com/app/installations"
       >|= fun body ->
       try
         let json = Yojson.Basic.from_string body in
-        if bot_info.Bot_info.debug then
+        if bot_infos.Bot_infos.debug then
           Caml.Format.eprintf
             "@[<v 1>---Get Installations---@,@[<v 2>Body received:@, %a@."
             Yojson.Basic.pp json;
@@ -115,7 +115,7 @@ let get_installations ~bot_info ~key =
       with
       | Yojson.Json_error err -> Error (f "Json error: %s" err)
       | Yojson.Basic.Util.Type_error (err, j) ->
-          if bot_info.Bot_info.debug then
+          if bot_infos.Bot_infos.debug then
             Caml.Format.eprintf
               "@[<v 1>---Get Installations---@,@[<v 2>Json type error: %s@,%a@."
               err Yojson.Basic.pp j;

@@ -4,23 +4,23 @@ open Cohttp_lwt_unix
 open Lwt
 open Utils
 
-let mv_card_to_column ~bot_info
+let mv_card_to_column ~bot_infos
     ({ card_id; column_id } : mv_card_to_column_input) =
   let open GitHub_GraphQL.MoveCardToColumn in
   makeVariables ~card_id ~column_id ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
   | Error err ->
       Stdio.print_endline (f "Error while moving project card: %s" err)
 
-let post_comment ~bot_info ~id ~message =
+let post_comment ~bot_infos ~id ~message =
   let open GitHub_GraphQL.PostComment in
   makeVariables ~id ~message ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.bind ~f:(function
         | { payload = Some { commentEdge = Some { node = Some { url } } } } ->
@@ -31,30 +31,30 @@ let report_on_posting_comment = function
   | Ok url -> Lwt_io.printf "Posted a new comment: %s\n" url
   | Error f -> Lwt_io.printf "Error while posting a comment: %s\n" f
 
-let post_and_report_comment ~bot_info ~id ~message =
-  post_comment ~bot_info ~id ~message >>= report_on_posting_comment
+let post_and_report_comment ~bot_infos ~id ~message =
+  post_comment ~bot_infos ~id ~message >>= report_on_posting_comment
 
-let update_milestone ~bot_info ~issue ~milestone =
+let update_milestone ~bot_infos ~issue ~milestone =
   let open GitHub_GraphQL.UpdateMilestone in
   makeVariables ~issue ~milestone ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
   | Error err ->
       Stdio.print_endline (f "Error while updating milestone: %s" err)
 
-let close_pull_request ~bot_info ~pr_id =
+let close_pull_request ~bot_infos ~pr_id =
   let open GitHub_GraphQL.ClosePullRequest in
   makeVariables ~pr_id () |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
   | Error err -> Stdio.print_endline (f "Error while closing PR: %s" err)
 
-let merge_pull_request ~bot_info ?merge_method ?commit_headline ?commit_body
+let merge_pull_request ~bot_infos ?merge_method ?commit_headline ?commit_body
     ~pr_id () =
   let merge_method =
     Option.map merge_method ~f:(function
@@ -65,29 +65,29 @@ let merge_pull_request ~bot_info ?merge_method ?commit_headline ?commit_body
   let open GitHub_GraphQL.MergePullRequest in
   makeVariables ~pr_id ?commit_headline ?commit_body ?merge_method ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
   | Error err -> Stdio.print_endline (f "Error while merging PR: %s" err)
 
-let reflect_pull_request_milestone ~bot_info issue_closer_info =
+let reflect_pull_request_milestone ~bot_infos issue_closer_info =
   match issue_closer_info.closer.milestone_id with
   | None -> Lwt_io.printf "PR closed without a milestone: doing nothing.\n"
   | Some milestone -> (
       match issue_closer_info.milestone_id with
       | None ->
           (* No previous milestone: setting the one of the PR which closed the issue *)
-          update_milestone ~bot_info ~issue:issue_closer_info.issue_id
+          update_milestone ~bot_infos ~issue:issue_closer_info.issue_id
             ~milestone
       | Some previous_milestone when String.equal previous_milestone milestone
         ->
           Lwt_io.print
             "Issue is already in the right milestone: doing nothing.\n"
       | Some _ ->
-          update_milestone ~bot_info ~issue:issue_closer_info.issue_id
+          update_milestone ~bot_infos ~issue:issue_closer_info.issue_id
             ~milestone
-          <&> (post_comment ~bot_info ~id:issue_closer_info.issue_id
+          <&> (post_comment ~bot_infos ~id:issue_closer_info.issue_id
                  ~message:
                    "The milestone of this issue was changed to reflect the one \
                     of the pull request that closed it."
@@ -104,7 +104,7 @@ let string_of_conclusion conclusion =
   | SUCCESS -> `SUCCESS
   | TIMED_OUT -> `TIMED_OUT
 
-let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
+let create_check_run ~bot_infos ?conclusion ~name ~repo_id ~head_sha ~status
     ~details_url ~title ?text ~summary ?external_id () =
   let conclusion = Option.map conclusion ~f:string_of_conclusion in
   let status =
@@ -131,10 +131,10 @@ let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
     ~summary ~url:details_url ?conclusion ?externalId:external_id ()
   |> serializeVariables |> variablesToJson
   |> fun json ->
-  if bot_info.Bot_info.debug then
+  if bot_infos.Bot_infos.debug then
     Caml.Format.eprintf "@[<v 1>---Make variables---@,@[<v 1>produced:@,%a@."
       Yojson.Basic.pp json;
-  GraphQL_query.send_graphql_query ~bot_info ~query
+  GraphQL_query.send_graphql_query ~bot_infos ~query
     ~parse:(Fn.compose parse unsafe_fromJson)
     json
   >|= function
@@ -142,42 +142,42 @@ let create_check_run ~bot_info ?conclusion ~name ~repo_id ~head_sha ~status
   | Error err ->
       Stdio.print_endline (f "Error while creating check run: %s" err)
 
-let update_check_run ~bot_info ~check_run_id ~repo_id ~conclusion ?details_url
+let update_check_run ~bot_infos ~check_run_id ~repo_id ~conclusion ?details_url
     ~title ?text ~summary () =
   let conclusion = string_of_conclusion conclusion in
   let open GitHub_GraphQL.UpdateCheckRun in
   makeVariables ~checkRunId:check_run_id ~repoId:repo_id ~conclusion
     ?url:details_url ~title ?text ~summary ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
   | Error err ->
       Stdio.print_endline (f "Error while updating check run: %s" err)
 
-let add_labels ~bot_info ~labels ~pr_id =
+let add_labels ~bot_infos ~labels ~pr_id =
   let label_ids = Array.of_list labels in
   let open GitHub_GraphQL.LabelPullRequest in
   makeVariables ~pr_id ~label_ids ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >>= fun _ -> Lwt.return_unit
 
-let remove_labels ~bot_info ~labels ~pr_id =
+let remove_labels ~bot_infos ~labels ~pr_id =
   let label_ids = Array.of_list labels in
   let open GitHub_GraphQL.UnlabelPullRequest in
   makeVariables ~pr_id ~label_ids ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >>= fun _ -> Lwt.return_unit
 
 (* TODO: use GraphQL API *)
 
-let update_milestone ~bot_info new_milestone (issue : issue) =
-  let headers = headers (github_header bot_info) ~bot_info in
+let update_milestone ~bot_infos new_milestone (issue : issue) =
+  let headers = headers (github_header bot_infos) ~bot_infos in
   let uri =
     f "https://api.github.com/repos/%s/%s/issues/%d" issue.owner issue.repo
       issue.number
@@ -194,7 +194,7 @@ let update_milestone ~bot_info new_milestone (issue : issue) =
 
 let remove_milestone = update_milestone "null"
 
-let send_status_check ~bot_info ~repo_full_name ~commit
+let send_status_check ~bot_infos ~repo_full_name ~commit
     ~(state : GitHub_types.status_state) ~url ~context ~description =
   Lwt_io.printf "Sending status check to %s (commit %s, state %s)\n"
     repo_full_name commit
@@ -212,9 +212,9 @@ let send_status_check ~bot_info ~repo_full_name ~commit
     |> Uri.of_string
   in
   Caml.Format.eprintf "%s@.%a@." bodys Uri.pp uri;
-  send_request ~body ~uri (github_header bot_info) ~bot_info
+  send_request ~body ~uri (github_header bot_infos) ~bot_infos
 
-let add_pr_to_column ~bot_info ~pr_id ~column_id =
+let add_pr_to_column ~bot_infos ~pr_id ~column_id =
   let body =
     "{\"content_id\":" ^ Int.to_string pr_id
     ^ ", \"content_type\": \"PullRequest\"}"
@@ -232,5 +232,5 @@ let add_pr_to_column ~bot_info ~pr_id ~column_id =
     |> Uri.of_string
   in
   send_request ~body ~uri
-    (project_api_preview_header @ github_header bot_info)
-    ~bot_info
+    (project_api_preview_header @ github_header bot_infos)
+    ~bot_infos

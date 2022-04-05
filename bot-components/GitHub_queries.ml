@@ -1,16 +1,16 @@
 open Base
-open Bot_info
+open Bot_infos
 open GitHub_types
 open Lwt
 open Utils
 
-let extract_backport_info ~(bot_info : Bot_info.t) description :
+let extract_backport_info ~(bot_infos : Bot_infos.t) description :
     full_backport_info option =
   let project_column_regexp =
     "https://github.com/[^/]*/[^/]*/projects/[0-9]+#column-\\([0-9]+\\)"
   in
   let regexp =
-    bot_info.name ^ ": backport to \\([^ ]*\\) (request inclusion column: "
+    bot_infos.name ^ ": backport to \\([^ ]*\\) (request inclusion column: "
     ^ project_column_regexp ^ "; backported column: " ^ project_column_regexp
     ^ "; move rejected PRs to: "
     ^ "https://github.com/[^/]*/[^/]*/milestone/\\([0-9]+\\)" ^ ")"
@@ -29,7 +29,7 @@ let extract_backport_info ~(bot_info : Bot_info.t) description :
         rejected_milestone;
       }
   else
-    let begin_regexp = bot_info.name ^ ": \\(.*\\)$" in
+    let begin_regexp = bot_infos.name ^ ": \\(.*\\)$" in
     let backport_info_unit =
       "backport to \\([^ ]*\\) (request inclusion column: "
       ^ project_column_regexp ^ "; backported column: " ^ project_column_regexp
@@ -67,12 +67,12 @@ let convertMilestone milestone =
   let open GitHub_GraphQL.PullRequest_Milestone_and_Cards.BackportInfo in
   { milestone_title = milestone.title; description = milestone.description }
 
-let get_pull_request_milestone_and_cards ~bot_info ~owner ~repo ~number =
+let get_pull_request_milestone_and_cards ~bot_infos ~owner ~repo ~number =
   let open GitHub_GraphQL.PullRequest_Milestone_and_Cards in
   let open BackportInfo in
   makeVariables ~owner ~repo ~number ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok result -> (
@@ -113,14 +113,14 @@ let get_pull_request_milestone_and_cards ~bot_info ~owner ~repo ~number =
       | None -> Error (f "Repository %s/%s does not exist." owner repo))
   | Error err -> Error err
 
-let get_backported_pr_info ~bot_info number base_ref =
-  get_pull_request_milestone_and_cards ~bot_info ~owner:"coq" ~repo:"coq"
+let get_backported_pr_info ~bot_infos number base_ref =
+  get_pull_request_milestone_and_cards ~bot_infos ~owner:"coq" ~repo:"coq"
     ~number
   >|= function
   | Ok (cards, milestone) ->
       (let open Option in
       milestone >>= fun milestone ->
-      ( milestone.description >>= extract_backport_info ~bot_info
+      ( milestone.description >>= extract_backport_info ~bot_infos
       >>= fun full_backport_info ->
         full_backport_info.backport_info
         |> List.find ~f:(fun { backport_to } ->
@@ -142,11 +142,11 @@ let get_backported_pr_info ~bot_info number base_ref =
       |> fun res -> Ok res
   | Error err -> Error (f "Error in backported_pr_info: %s." err)
 
-let get_pull_request_id_and_milestone ~bot_info ~owner ~repo ~number =
+let get_pull_request_id_and_milestone ~bot_infos ~owner ~repo ~number =
   let open GitHub_GraphQL.PullRequest_ID_and_Milestone in
   makeVariables ~owner ~repo ~number ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.bind ~f:(fun result ->
           match result.repository with
@@ -171,7 +171,7 @@ let get_pull_request_id_and_milestone ~bot_info ~owner ~repo ~number =
                         (match milestone.description with
                         | Some description -> (
                             match
-                              extract_backport_info ~bot_info description
+                              extract_backport_info ~bot_infos description
                             with
                             | Some bp_info -> Some (pr.id, db_id, bp_info)
                             | _ -> None)
@@ -194,11 +194,11 @@ let team_membership_of_resp ~org ~team ~user resp =
               Ok true
           | _ -> Ok false))
 
-let get_team_membership ~bot_info ~org ~team ~user =
+let get_team_membership ~bot_infos ~org ~team ~user =
   let open GitHub_GraphQL.TeamMembership in
   makeVariables ~org ~team ~user ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query get_team_membership failed with %s" err)
@@ -244,11 +244,11 @@ let pull_request_info_of_resp ~owner ~repo ~number resp :
                       last_commit_message = Some node.commit.message;
                     })))
 
-let get_pull_request_refs ~bot_info ~owner ~repo ~number =
+let get_pull_request_refs ~bot_infos ~owner ~repo ~number =
   let open GitHub_GraphQL.PullRequest_Refs in
   makeVariables ~owner ~repo ~number ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query pull_request_info failed with %s" err)
@@ -338,11 +338,11 @@ let pull_request_reviews_info_of_resp ~owner ~repo ~number resp :
                         | Some `REVIEW_REQUIRED -> REVIEW_REQUIRED);
                     })))
 
-let get_pull_request_reviews_refs ~bot_info ~owner ~repo ~number =
+let get_pull_request_reviews_refs ~bot_infos ~owner ~repo ~number =
   let open GitHub_GraphQL.PullRequestReviewsInfo.MergePullRequestInfo in
   makeVariables ~owner ~repo ~number ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query pull_request_reviews_info failed with %s" err)
@@ -358,11 +358,11 @@ let file_content_of_resp ~owner ~repo resp : (string option, string) Result.t =
       | Some (`UnspecifiedFragment _) -> Ok None
       | None -> Ok None)
 
-let get_file_content ~bot_info ~owner ~repo ~branch ~file_name =
+let get_file_content ~bot_infos ~owner ~repo ~branch ~file_name =
   let open GitHub_GraphQL.FileContent in
   makeVariables ~owner ~repo ~file:(branch ^ ":" ^ file_name) ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err -> f "Query file_content failed with %s" err)
   >|= Result.bind ~f:(file_content_of_resp ~owner ~repo)
@@ -376,11 +376,11 @@ let default_branch_of_resp ~owner ~repo resp =
       | None -> Error "No default branch found."
       | Some default_branch -> Ok (default_branch.name : string))
 
-let get_default_branch ~bot_info ~owner ~repo =
+let get_default_branch ~bot_infos ~owner ~repo =
   let open GitHub_GraphQL.DefaultBranch in
   makeVariables ~owner ~repo ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query get_default_branch failed with %s" err)
@@ -442,11 +442,11 @@ let issue_closer_info_of_resp ~owner ~repo ~number resp =
                        reason)
           | _ -> Result.return NoCloseEvent))
 
-let get_issue_closer_info ~bot_info ({ owner; repo; number } : issue) =
+let get_issue_closer_info ~bot_infos ({ owner; repo; number } : issue) =
   let open GitHub_GraphQL.Issue_Milestone.IssueMilestone in
   makeVariables ~owner ~repo ~number ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query issue_milestone failed with %s" err)
@@ -458,21 +458,21 @@ let repo_id_of_resp ~owner ~repo resp =
   | None -> Error (f "Unknown repository %s/%s." owner repo)
   | Some repository -> Ok repository.id
 
-let get_repository_id ~bot_info ~owner ~repo =
+let get_repository_id ~bot_infos ~owner ~repo =
   let open GitHub_GraphQL.RepoId in
   makeVariables ~owner ~repo ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query get_repository_id failed with %s" err)
   >|= Result.bind ~f:(repo_id_of_resp ~owner ~repo)
 
-let get_status_check ~bot_info ~owner ~repo ~commit ~context =
+let get_status_check ~bot_infos ~owner ~repo ~commit ~context =
   let open GitHub_GraphQL.GetCheckRuns in
-  makeVariables ~owner ~repo ~commit ~context ~appId:bot_info.app_id ()
+  makeVariables ~owner ~repo ~commit ~context ~appId:bot_infos.app_id ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err ->
           f "Query get_status_check failed with %s" err)
@@ -528,13 +528,13 @@ type base_and_head_checks_info = {
   labels : string list;
 }
 
-let get_base_and_head_checks ~bot_info ~owner ~repo ~pr_number ~base ~head =
-  let appId = bot_info.app_id in
+let get_base_and_head_checks ~bot_infos ~owner ~repo ~pr_number ~base ~head =
+  let appId = bot_infos.app_id in
   let open GitHub_GraphQL.GetBaseAndHeadChecks in
   let open GetChecks in
   makeVariables ~appId ~owner ~repo ~prNumber:pr_number ~base ~head ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.bind ~f:(fun resp ->
           resp.repository
@@ -719,12 +719,12 @@ let get_list getter =
   in
   get_list_aux None []
 
-let get_open_pull_requests_with_label ~bot_info ~owner ~repo ~label =
+let get_open_pull_requests_with_label ~bot_infos ~owner ~repo ~label =
   let open GitHub_GraphQL.GetOpenPullRequestWithLabel in
   let getter cursor =
     makeVariables ~owner ~repo ~label ~len:100 ?cursor ()
     |> serializeVariables |> variablesToJson
-    |> GraphQL_query.send_graphql_query ~bot_info ~query
+    |> GraphQL_query.send_graphql_query ~bot_infos ~query
          ~parse:(Fn.compose parse unsafe_fromJson)
     >>= function
     | Ok result -> (
@@ -750,13 +750,13 @@ let get_open_pull_requests_with_label ~bot_info ~owner ~repo ~label =
   in
   get_list getter
 
-let get_pull_request_label_timeline ~bot_info ~owner ~repo ~pr_number =
+let get_pull_request_label_timeline ~bot_infos ~owner ~repo ~pr_number =
   let open GitHub_GraphQL.GetPullRequestLabelTimeline in
   let open GetPullRequestLabelTimeline in
   let getter cursor =
     makeVariables ~owner ~repo ~prNumber:pr_number ~len:100 ?cursor ()
     |> serializeVariables |> variablesToJson
-    |> GraphQL_query.send_graphql_query ~bot_info ~query
+    |> GraphQL_query.send_graphql_query ~bot_infos ~query
          ~parse:(Fn.compose parse unsafe_fromJson)
     >>= function
     | Ok result -> (
@@ -798,11 +798,11 @@ let get_pull_request_label_timeline ~bot_info ~owner ~repo ~pr_number =
   in
   get_list getter
 
-let get_label ~bot_info ~owner ~repo ~label =
+let get_label ~bot_infos ~owner ~repo ~label =
   let open GitHub_GraphQL.GetLabel in
   makeVariables ~owner ~repo ~label ()
   |> serializeVariables |> variablesToJson
-  |> GraphQL_query.send_graphql_query ~bot_info ~query
+  |> GraphQL_query.send_graphql_query ~bot_infos ~query
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= Result.map_error ~f:(fun err -> f "Query label failed with %s" err)
   >|= Result.bind ~f:(fun result ->
@@ -813,12 +813,12 @@ let get_label ~bot_info ~owner ~repo ~label =
               | None -> Ok None)
           | None -> Error (f "Repository %s/%s does not exist." owner repo))
 
-let get_pull_request_labels ~bot_info ~owner ~repo ~pr_number =
+let get_pull_request_labels ~bot_infos ~owner ~repo ~pr_number =
   let getter cursor =
     let open GitHub_GraphQL.GetPullRequestLabels in
     makeVariables ~owner ~repo ~prNumber:pr_number ?cursor ~len:100 ()
     |> serializeVariables |> variablesToJson
-    |> GraphQL_query.send_graphql_query ~bot_info ~query
+    |> GraphQL_query.send_graphql_query ~bot_infos ~query
          ~parse:(Fn.compose parse unsafe_fromJson)
     >>= function
     | Ok result -> (

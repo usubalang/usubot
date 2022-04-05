@@ -1,15 +1,16 @@
 open Base
-open Bot_info
+open Bot_infos
 open Lwt.Infix
 open Utils
 
-let send_graphql_query ~bot_info ?(extra_headers = []) ~query ~parse variables =
+let send_graphql_query ~bot_infos ?(extra_headers = []) ~query ~parse variables
+    =
   let uri = Uri.of_string "https://api.github.com/graphql" in
   let headers =
     Cohttp.Header.of_list
       ([
-         ("Authorization", "bearer " ^ github_token bot_info);
-         ("User-Agent", bot_info.name);
+         ("Authorization", "bearer " ^ github_token bot_infos);
+         ("User-Agent", bot_infos.name);
        ]
       @ extra_headers)
   in
