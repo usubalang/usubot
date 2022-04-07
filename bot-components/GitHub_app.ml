@@ -23,17 +23,19 @@ let base64 = Base64.encode ~pad:false ~alphabet:Base64.uri_safe_alphabet
 let make_jwt ~bot_infos ~key =
   let header = "{ \"alg\": \"RS256\" }" in
   let issuedAtf = Unix.time () in
-  (if bot_infos.Bot_infos.debug then
-   let open Unix in
-   Caml.Format.eprintf "@[<v 1>--- make jwt ---@,issued at: %a@,exp: %a@."
-     Helpers.pp_date (gmtime issuedAtf) Helpers.pp_date
-     (gmtime (issuedAtf +. (60. *. 8.))));
   let issuedAt = Int.of_float issuedAtf in
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
       (issuedAt + (60 * 8))
       bot_infos.Bot_infos.app_id
   in
+  (if bot_infos.Bot_infos.debug then
+   let open Unix in
+   Caml.Format.eprintf
+     "@[<v 1>--- make jwt ---@,issued at: %a@,exp: %a@,Payload: %s@."
+     Helpers.pp_date (gmtime issuedAtf) Helpers.pp_date
+     (gmtime (issuedAtf +. (60. *. 8.)))
+     payload);
   match (base64 header, base64 payload) with
   | Ok h, Ok p -> (
       let data = h ^ "." ^ p in

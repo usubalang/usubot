@@ -63,4 +63,4 @@ let pp_date ppf d =
   let open Unix in
   Caml.Format.fprintf ppf "%a:%a:%a %a/%a/%d" pp_with_zero d.tm_hour
     pp_with_zero d.tm_min pp_with_zero d.tm_sec pp_with_zero d.tm_mday
-    pp_with_zero d.tm_mon (d.tm_year + 1900)
+    pp_with_zero (d.tm_mon + 1) (d.tm_year + 1900)
