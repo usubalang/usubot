@@ -26,7 +26,7 @@ let make_jwt ~bot_infos ~key =
   let issuedAt = Int.of_float issuedAtf in
   let payload =
     f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
-      (issuedAt + (60 * 8))
+      (issuedAt + (60 * 5))
       bot_infos.Bot_infos.app_id
   in
   (if bot_infos.Bot_infos.debug then
