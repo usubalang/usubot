@@ -46,5 +46,5 @@ let () =
   Mirage_crypto_rng_lwt.initialize ();
   let bot_infos = Parser_bot_infos.get_bot_infos () in
   Format.printf "Starting server. Diff time: %.0f@."
-    bot_infos.bot_infos.diff_dates
-(* Lwt_main.run (server bot_infos) *)
+    bot_infos.bot_infos.diff_dates;
+  Lwt_main.run (server bot_infos)
