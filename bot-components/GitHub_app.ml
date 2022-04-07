@@ -44,13 +44,15 @@ let make_jwt ~bot_infos ~key =
       Error (f "Couldn't create JWT token: %s" e)
 
 let get ~bot_infos ~token ~url =
-  Stdio.print_endline ("Making get request to " ^ url);
+  if bot_infos.Bot_infos.debug then
+    Caml.Format.eprintf "Making get request to %s" url;
   let headers = headers ~bot_infos (github_headers token) in
   Client.get ~headers (Uri.of_string url) >>= fun (_response, body) ->
   Cohttp_lwt.Body.to_string body
 
 let post ~bot_infos ~body ~token ~url =
-  Stdio.print_endline ("Making post request to " ^ url);
+  if bot_infos.Bot_infos.debug then
+    Caml.Format.eprintf "Making post request to %s" url;
   let headers = headers ~bot_infos (github_headers token) in
   let body =
     (match body with None -> "{}" | Some json -> Yojson.to_string json)

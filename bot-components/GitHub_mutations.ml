@@ -13,8 +13,7 @@ let mv_card_to_column ~bot_infos
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
-  | Error err ->
-      Stdio.print_endline (f "Error while moving project card: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while moving project card: %s" err
 
 let post_comment ~bot_infos ~id ~message =
   let open GitHub_GraphQL.PostComment in
@@ -42,8 +41,7 @@ let update_milestone ~bot_infos ~issue ~milestone =
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
-  | Error err ->
-      Stdio.print_endline (f "Error while updating milestone: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while updating milestone: %s" err
 
 let close_pull_request ~bot_infos ~pr_id =
   let open GitHub_GraphQL.ClosePullRequest in
@@ -52,7 +50,7 @@ let close_pull_request ~bot_infos ~pr_id =
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
-  | Error err -> Stdio.print_endline (f "Error while closing PR: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while closing PR: %s" err
 
 let merge_pull_request ~bot_infos ?merge_method ?commit_headline ?commit_body
     ~pr_id () =
@@ -69,7 +67,7 @@ let merge_pull_request ~bot_infos ?merge_method ?commit_headline ?commit_body
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
-  | Error err -> Stdio.print_endline (f "Error while merging PR: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while merging PR: %s" err
 
 let reflect_pull_request_milestone ~bot_infos issue_closer_info =
   match issue_closer_info.closer.milestone_id with
@@ -139,8 +137,7 @@ let create_check_run ~bot_infos ?conclusion ~name ~repo_id ~head_sha ~status
     json
   >|= function
   | Ok _ -> ()
-  | Error err ->
-      Stdio.print_endline (f "Error while creating check run: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while creating check run: %s" err
 
 let update_check_run ~bot_infos ~check_run_id ~repo_id ~conclusion ?details_url
     ~title ?text ~summary () =
@@ -153,8 +150,7 @@ let update_check_run ~bot_infos ~check_run_id ~repo_id ~conclusion ?details_url
        ~parse:(Fn.compose parse unsafe_fromJson)
   >|= function
   | Ok _ -> ()
-  | Error err ->
-      Stdio.print_endline (f "Error while updating check run: %s" err)
+  | Error err -> Caml.Format.eprintf "Error while updating check run: %s" err
 
 let add_labels ~bot_infos ~labels ~pr_id =
   let label_ids = Array.of_list labels in
