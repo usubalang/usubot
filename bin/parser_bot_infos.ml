@@ -43,6 +43,14 @@ let path =
   let inf = Arg.(info [ "key_path"; "k" ] ~docv:"FILE" ~doc) in
   Arg.(value & opt (some string) None & inf)
 
+let timezone =
+  let doc =
+    "Timezone of the executing computer. If the global variable TZ is not set \
+     it will default to 'Europe/Paris'."
+  in
+  let inf = Arg.(info [ "tz"; "t" ] ~docv:"TZ" ~doc) in
+  Arg.(value & opt (some string) None & inf)
+
 let benchs =
   let doc = "Directory containing all the benchs" in
   let inf = Arg.(info [ "benchs"; "b" ] ~docv:"FILE" ~doc) in
@@ -53,7 +61,7 @@ let main_repo =
   let inf = Arg.(info [ "usuba"; "u" ] ~docv:"FILE" ~doc) in
   Arg.(value & opt string "~/usuba" & inf)
 
-let main toml_file path benchs main_repo debug =
+let main toml_file path benchs main_repo debug timezone =
   let toml_data = Config.toml_of_file toml_file in
   let port = Config.port toml_data in
   let gitlab_access_token = Config.gitlab_access_token toml_data in
@@ -63,6 +71,17 @@ let main toml_file path benchs main_repo debug =
   let daily_schedule_secret = Config.daily_schedule_secret toml_data in
   let bot_name = Config.bot_name toml_data in
   let app_id = Config.github_app_id toml_data in
+
+  let timezone =
+    Option.value
+      ~default:
+        (match Unix.getenv "TZ" with
+        | s -> s
+        | exception Not_found -> "Europe/Paris")
+      timezone
+  in
+
+  let diff_dates = Date.date timezone in
   let bot_infos =
     Bot_components.Bot_infos.
       {
@@ -74,6 +93,7 @@ let main toml_file path benchs main_repo debug =
         domain = Config.bot_domain toml_data;
         app_id;
         debug;
+        diff_dates;
       }
   in
   let github_private_key =
@@ -84,7 +104,6 @@ let main toml_file path benchs main_repo debug =
 
   let benchs = absolute_path benchs in
   let main_repo = absolute_path main_repo in
-
   `Ok
     {
       bot_infos;
@@ -101,7 +120,8 @@ let main toml_file path benchs main_repo debug =
 
 let parse_infos =
   let main =
-    Term.(ret (const main $ toml_file $ path $ benchs $ main_repo $ debug))
+    Term.(
+      ret (const main $ toml_file $ path $ benchs $ main_repo $ debug $ timezone))
   in
 
   let doc = "Start the bot with the given config file." in

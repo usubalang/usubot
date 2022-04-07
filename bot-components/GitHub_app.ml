@@ -2,6 +2,7 @@ open Base
 open Cohttp_lwt_unix
 open Lwt
 open Utils
+open Bot_infos
 
 let github_headers token =
   [
@@ -22,11 +23,11 @@ let base64 = Base64.encode ~pad:false ~alphabet:Base64.uri_safe_alphabet
 (* The following functions are largely based on https://github.com/Schniz/reason-pr-labels *)
 let make_jwt ~bot_infos ~key =
   let header = "{ \"alg\": \"RS256\" }" in
-  let issuedAtf = Unix.time () in
+  let issuedAtf = Unix.time () +. bot_infos.diff_dates in
   let issuedAt = Int.of_float issuedAtf in
+  let expected = issuedAt + (60 * 8) in
   let payload =
-    f "{ \"iat\": %d, \"exp\": %d, \"iss\": %d }" issuedAt
-      (issuedAt + (60 * 5))
+    f {|{ "iat": %d, "exp": %d, "iss": %d }|} issuedAt expected
       bot_infos.Bot_infos.app_id
   in
   (if bot_infos.Bot_infos.debug then
@@ -34,7 +35,7 @@ let make_jwt ~bot_infos ~key =
    Caml.Format.eprintf
      "@[<v 1>--- make jwt ---@,issued at: %a@,exp: %a@,Payload: %s@."
      Helpers.pp_date (gmtime issuedAtf) Helpers.pp_date
-     (gmtime (issuedAtf +. (60. *. 8.)))
+     (gmtime (Float.of_int expected))
      payload);
   match (base64 header, base64 payload) with
   | Ok h, Ok p -> (

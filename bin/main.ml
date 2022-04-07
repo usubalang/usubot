@@ -35,9 +35,16 @@ let server bot_infos =
 let pp_hex ppf s =
   String.iter (fun c -> Format.fprintf ppf "%X" (Char.code c)) s
 
+let pp_list ?(pp_sep = Format.pp_print_cut) ?(left = "[") ?(right = "]") pp ppf
+    l =
+  Format.fprintf ppf "%s%a%s" left Format.(pp_print_list ~pp_sep pp) l right
+
+let pp_string ppf s = Format.fprintf ppf "%s" s
+
 let () =
   (* RNG seeding: https://github.com/mirage/mirage-crypto#faq *)
   Mirage_crypto_rng_lwt.initialize ();
   let bot_infos = Parser_bot_infos.get_bot_infos () in
-  Format.printf "Starting server.@.";
-  Lwt_main.run (server bot_infos)
+  Format.printf "Starting server. Diff time: %.0f@."
+    bot_infos.bot_infos.diff_dates
+(* Lwt_main.run (server bot_infos) *)

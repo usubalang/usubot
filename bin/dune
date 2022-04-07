@@ -4,7 +4,7 @@
  (public_name usubot)
  (libraries cohttp-lwt-unix conduit-lwt yojson bot-components cmdliner mirage-crypto
    mirage-crypto-rng mirage-crypto-rng.lwt str)
-  (modules main parser_bot_infos handlers util)
+  (modules main parser_bot_infos handlers util date)
 )
 
 (env

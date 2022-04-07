@@ -7,6 +7,7 @@ type t = {
   domain : string;
   app_id : int;
   debug : bool;
+  diff_dates : float;
 }
 
 val github_token : t -> string
