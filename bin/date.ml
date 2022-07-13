@@ -7,14 +7,15 @@ let month_to_int = function
   | "Mar" -> 2
   | "Apr" -> 3
   | "May" -> 4
-  | "June" -> 5
-  | "July" -> 6
+  | "Jun" -> 5
+  | "Jul" -> 6
   | "Aug" -> 7
   | "Sept" -> 8
   | "Oct" -> 9
   | "Nov" -> 10
   | "Dec" -> 11
-  | _ -> failwith "Wrong month format"
+  | s ->
+      failwith (Format.sprintf "Wrong month format: %s is not a valid month" s)
 
 let parse_github_date date =
   (* Date format: Thu, 07 Apr 2022 15:03:32 GMT *)
@@ -51,10 +52,4 @@ let date timezone =
   in
   let tm_github = parse_github_date date in
   let ut_github, _ = mk_time tm_github timezone in
-  (* Format.printf "@[<v 1>Date: @,'%s'@." date; *)
-  (* Format.eprintf "@[<v 1>GitHub date: %a@,%f@." Bot_components.Helpers.pp_date *)
-  (*   tm_github ut_github; *)
-  (* let tm_local = Unix.gmtime ut_local in *)
-  (* Format.eprintf "@[<v 1>Local date: %a@,%f@." Bot_components.Helpers.pp_date *)
-  (*   tm_local ut_local; *)
   ut_github -. ut_local
