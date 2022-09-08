@@ -10,7 +10,7 @@ let month_to_int = function
   | "Jun" -> 5
   | "Jul" -> 6
   | "Aug" -> 7
-  | "Sept" -> 8
+  | "Sep" -> 8
   | "Oct" -> 9
   | "Nov" -> 10
   | "Dec" -> 11
