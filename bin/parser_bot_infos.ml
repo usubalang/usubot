@@ -22,11 +22,11 @@ let absolute_path file =
 
 let pp ppf t =
   Format.fprintf ppf
-    "{ bot_infoss : %a;@ port : %d;@ github_webhook_secret : %s;@ \
-     github_access_token : %s;@ daily_schedule_secret : %s;@,\
-     }"
+    "{ bot_infos : %a;@ port : %d;@ github_webhook_secret : %s;@ \
+     github_access_token : %s;@ daily_schedule_secret : %s;@ benchs: %s;@ \
+     main_repo: %s@ }"
     Bot_infos.pp t.bot_infos t.port t.github_webhook_secret
-    t.github_access_token t.daily_schedule_secret
+    t.github_access_token t.daily_schedule_secret t.benchs t.main_repo
 
 let toml_file =
   let doc = "TOML file containing all the necessary bot infos" in

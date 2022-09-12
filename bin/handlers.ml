@@ -37,13 +37,13 @@ let time bot_info branch =
   let command =
     Helpers.f "cd %s && git checkout %s && git pull" bot_info.main_repo branch
   in
-  Format.eprintf "%s..." command;
+  Format.eprintf "%s...@." command;
   let ex = Sys.command command in
   Format.eprintf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
   let command = Helpers.f "cd %s && ./bench_perfs.pl -q 1> output" benchs in
-  Format.eprintf "%s... " command;
+  Format.eprintf "%s...@." command;
   let ex = Sys.command command in
   let time_end = Unix.gettimeofday () in
   let time = time_end -. time_start in

@@ -22,7 +22,6 @@ TODO")
  (depends
   (ocaml (>= 4.10))
   (dune (>= 2.2))
-   ; opium
   (lwt (>= 5.3.0))
   (cohttp-lwt (>= 2.5.4))
   (cohttp-lwt-unix (>= 2.5.4))
