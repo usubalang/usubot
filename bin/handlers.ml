@@ -42,7 +42,10 @@ let time bot_info branch =
   Format.eprintf " ended with %d exit status@." ex;
   (* Go in the benchmarks repo and run the script *)
   let time_start = Unix.gettimeofday () in
-  let command = Helpers.f "cd %s && ./bench_perfs.pl -q 1> output" benchs in
+  let command =
+    Helpers.f "cd %s && ./bench_perfs.pl --dir \"%s\" -q 1> output" benchs
+      bot_info.main_repo
+  in
   Format.eprintf "%s...@." command;
   let ex = Sys.command command in
   let time_end = Unix.gettimeofday () in
