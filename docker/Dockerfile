@@ -1,9 +1,9 @@
 FROM usuba
 
-RUN sudo npm install -g smee-client
-
 RUN sudo apt install -y -qq --no-install-recommends \
-                     libgmp-dev pkg-config npm
+                     libgmp-dev pkg-config npm netbase
+
+RUN sudo npm install -g smee-client
 
 RUN git clone https://github.com/usubalang/usubot.git && \
       cd usubot && \
