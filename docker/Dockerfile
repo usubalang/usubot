@@ -12,7 +12,6 @@ RUN git clone https://github.com/usubalang/usubot.git && \
 
 COPY secret/config.toml config.toml
 COPY secret/usubot.2022-02-25.private-key.pem usubot.2022-02-25.private-key.pem
-COPY secret/smee_endpoint.txt smee_endpoint.txt
 COPY service.sh service.sh
 
 CMD ./service.sh

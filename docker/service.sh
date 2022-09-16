@@ -1,6 +1,10 @@
 #!/bin/bash
 
-KEY=`cat ~/smee_endpoint.txt`
+BENCHMARKS=/home/eval/benchmarks
+PRIVATE_KEY=/home/eval/usubot.2022-02-25.private-key.pem
+CONFIG=/home/eval/config.toml
+
+KEY=`sed -nE 's/.*domain="https:\/\/smee.io\/([^"]+)".*/\1/p' $CONFIG`
 
 echo "SMEE key: $KEY"
 
@@ -10,9 +14,9 @@ smee -u "https://smee.io/$KEY" \
 cd usubot;
   opam exec -- \
     dune exec usubot -- \
-      -k ~/usubot.2022-02-25.private-key.pem \
-      ~/config.toml \
-      -b ~/benchmarks \
+      -k $PRIVATE_KEY \
+      $CONFIG \
+      -b $BENCHMARKS \
       --debug &
 
 
