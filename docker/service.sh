@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BENCHMARKS=/home/eval/benchmarks
-PRIVATE_KEY=/home/eval/usubot.2022-02-25.private-key.pem
+PRIVATE_KEY=/home/eval/usubot.private-key.pem
 CONFIG=/home/eval/config.toml
 
 KEY=`sed -nE 's/.*domain="https:\/\/smee.io\/([^"]+)".*/\1/p' $CONFIG`

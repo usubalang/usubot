@@ -11,7 +11,7 @@ RUN git clone https://github.com/usubalang/usubot.git && \
       opam exec -- dune build
 
 COPY secret/config.toml config.toml
-COPY secret/usubot.2022-02-25.private-key.pem usubot.2022-02-25.private-key.pem
+COPY secret/usubot.private-key.pem usubot.private-key.pem
 COPY service.sh service.sh
 
 CMD ./service.sh

@@ -2,7 +2,7 @@
 
 .PHONY: build run
 
-build:
+build: secret/config.toml secret/usubot.private-key.pem
 	docker build					\
 		 --tag=usubot				\
 		 .
